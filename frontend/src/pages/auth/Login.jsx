@@ -45,8 +45,7 @@ const Login = () => {
       const result = await login({ email, password });
       
       console.log('Login success');
-      
-      // Redirect based on user role
+   
       const role = result?.user?.role || 'user';
       switch (role) {
         case 'driver':

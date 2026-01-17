@@ -1,41 +1,47 @@
-// App.jsx
+
 import React from "react";
 import { createBrowserRouter, RouterProvider, Navigate, Outlet } from "react-router-dom";
 import { useAuthStore } from "./store/useAuthStore";
 
-// Pages & Components
+
 import Header from "./components/Header";
 import HomePage from "./pages/HomePage";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import Unauthorized from "./pages/Unauthorized";
 
-// Dashboards
 import UserDashboard from "./dashboard/UserDashboard";
 import DriverDashboard from "./dashboard/DriverDashboard";
 import HospitalDashboard from "./dashboard/HospitalDashboard";
 
-// ---------------------
-// Layout Component
-// ---------------------
+
 const MainLayout = () => {
   return (
     <>
-      <Header />       {/* Header is inside router context */}
+      <Header />     
       <main>
-        <Outlet />     {/* Renders the matched child route */}
+        <Outlet />     
       </main>
     </>
   );
 };
 
-// ---------------------
-// Role-Based Route Wrapper
-// ---------------------
-const RoleBasedRoute = ({ children, allowedRoles }) => {
-  const { isAuthenticated, user } = useAuthStore();
 
-  if (!isAuthenticated) return <Navigate to="/" replace />;
+const RoleBasedRoute = ({ children, allowedRoles }) => {
+  const { isAuthenticated, user,isLoading } = useAuthStore();
+  if (isLoading) {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <p className="text-gray-600">Loading dashboard...</p>
+    </div>
+  );
+}
+
+
+
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+    if (!user?.role) return null; 
+
 
   if (allowedRoles && !allowedRoles.includes(user?.role)) {
     return <Navigate to="/unauthorized" replace />;
@@ -44,9 +50,7 @@ const RoleBasedRoute = ({ children, allowedRoles }) => {
   return children;
 };
 
-// ---------------------
-// Public Route Wrapper
-// ---------------------
+
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, user } = useAuthStore();
 
@@ -58,9 +62,7 @@ const PublicRoute = ({ children }) => {
   return children;
 };
 
-// ---------------------
-// Helper: Get dashboard path
-// ---------------------
+
 const getDashboardPath = (role) => {
   switch (role) {
     case "driver":
@@ -69,13 +71,11 @@ const getDashboardPath = (role) => {
       return "/dashboard/hospital";
     case "user":
     default:
-      return "/dashboard";
+      return "/dashboard/user";
   }
 };
 
-// ---------------------
-// Root Redirect (404)
-// ---------------------
+
 const RootRedirect = () => {
   const { isAuthenticated, user } = useAuthStore();
 
@@ -109,7 +109,7 @@ const router = createBrowserRouter([
 
       // Hospital Dashboard
       {
-        path: "/dashboard/hospita",
+        path: "/dashboard/hospital",
         element: <RoleBasedRoute allowedRoles={["hospital"]}><HospitalDashboard /></RoleBasedRoute>,
       },
 
