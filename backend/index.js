@@ -1,7 +1,30 @@
 const express = require("express");
+const bodyparser = require("body-parser");
+const cors = require("cors");
+const cookieParser =  require('cookie-parser')
+const path = require("path");
+
 require("dotenv").config();
+
+const dbconenction = require("./config/dbConfig");
+const DataBaseConnection = require("./config/dbConfig");
+
 const app = express();
 const port = process.env.PORT;
+
+DataBaseConnection();
+
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+    ],
+    credentials: true,
+  })
+);
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
   res.send("Hello World!");
