@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { loginUser, signupUser, logoutUser } from "../services/auth";
+import { loginUser, signupUser, logoutUser,loginDriverService } from "../services/auth";
 
 export const useAuthStore = create(
   persist(
@@ -39,21 +39,31 @@ export const useAuthStore = create(
           throw error;
         }
       },
-       loginDriver: async (credentials) => {
-    set({ isLoading: true });
-    try {
-      const data = await loginDriver(credentials);
-      set({
-        user: data.data,
-        isAuthenticated: true,
-        isLoading: false,
-      });
-      return data;
-    } catch (err) {
-      set({ isLoading: false });
-      throw err;
-    }
-  },
+
+      loginDriver: async (credentials) => {
+        set({ isLoading: true, error: null });
+        try {
+          const result = await loginDriverService(credentials); 
+          
+      
+          set({
+            user: result.data,
+            token: result.token,  
+            isAuthenticated: true,
+            isLoading: false,
+            error: null
+          });
+          
+          console.log("Auth Store - Driver Login successful:", result);
+          return result;
+        } catch (err) {
+          set({
+            isLoading: false,
+            error: err.message,
+          });
+          throw err;
+        }
+      },
 
       signup: async (userData) => {
         set({ isLoading: true, error: null });

@@ -1,4 +1,5 @@
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const Ambulance = require("../model/ambulanceModel");
 
 exports.ambulanceLogin = async (req, res) => {
@@ -36,7 +37,27 @@ exports.ambulanceLogin = async (req, res) => {
       });
     }
 
-    // 4. Successful login response
+    // 4. Generate JWT
+    const token = jwt.sign(
+      {
+        id: ambulance._id,
+        role: "driver"
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: process.env.JWT_EXPIRES_IN || "7d"
+      }
+    );
+
+    // 5. Set JWT in cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
+    // 6. Successful login response
     return res.status(200).json({
       statusCode: 200,
       message: "Login successful",

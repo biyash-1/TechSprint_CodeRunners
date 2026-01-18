@@ -11,9 +11,9 @@ export const loginUser = async (credentials) => {
     throw new Error(errorMessage);
   }
 };
-export const loginDriver = async (credentials) => {
+export const loginDriverService = async (credentials) => {
   try {
-    const response = await axiosInstance.post('/auth/driver/login', credentials);
+    const response = await axiosInstance.post('/auth/driver-login', credentials);
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.message || 'Driver login failed');
