@@ -15,7 +15,7 @@ import HospitalDashboard from "./dashboard/HospitalDashboard";
 import AdminDashboard from "./dashboard/AdminDashboard";
 
 // ---------------------
-// Layout Component
+// Layouts
 // ---------------------
 const MainLayout = () => (
   <>
@@ -23,6 +23,15 @@ const MainLayout = () => (
     <main>
       <Outlet />
     </main>
+  </>
+);
+
+const DashboardLayout = () => (
+  <>
+    
+    <div className="p-6">
+      <Outlet />
+    </div>
   </>
 );
 
@@ -35,15 +44,13 @@ const RoleBasedRoute = ({ children, allowedRoles }) => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Loading dashboard...</p>
+        <p className="text-gray-600">Loading...</p>
       </div>
     );
   }
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (!user?.role) return <Navigate to="/login" replace />;
-
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  if (!user?.role || !allowedRoles.includes(user.role)) {
     return <Navigate to="/unauthorized" replace />;
   }
 
@@ -56,8 +63,8 @@ const RoleBasedRoute = ({ children, allowedRoles }) => {
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, user } = useAuthStore();
 
-  if (isAuthenticated) {
-    const dashboardPath = getDashboardPath(user?.role);
+  if (isAuthenticated && user?.role) {
+    const dashboardPath = getDashboardPath(user.role);
     return <Navigate to={dashboardPath} replace />;
   }
 
@@ -83,11 +90,8 @@ const getDashboardPath = (role) => {
 
 const RootRedirect = () => {
   const { isAuthenticated, user } = useAuthStore();
-
   if (!isAuthenticated) return <Navigate to="/" replace />;
-
-  const dashboardPath = getDashboardPath(user?.role);
-  return <Navigate to={dashboardPath} replace />;
+  return <Navigate to={getDashboardPath(user?.role)} replace />;
 };
 
 // ---------------------
@@ -96,26 +100,34 @@ const RootRedirect = () => {
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <MainLayout />,
+    element: <MainLayout />, // Header for public pages
     children: [
       { index: true, element: <HomePage /> },
       { path: "login", element: <PublicRoute><Login /></PublicRoute> },
       { path: "signup", element: <PublicRoute><Signup /></PublicRoute> },
       { path: "unauthorized", element: <Unauthorized /> },
 
-      // Dashboard Routes (all role checks at parent level)
+      // Dashboard routes now use DashboardLayout (Header inside it, remove from MainLayout)
       {
         path: "dashboard",
-        element: (
-          <RoleBasedRoute allowedRoles={["user", "driver", "hospital", "admin"]}>
-            <Outlet />
-          </RoleBasedRoute>
-        ),
+        element: <DashboardLayout />, // Header here only
         children: [
-          { path: "user", element: <UserDashboard /> },
-          { path: "driver", element: <DriverDashboard /> },
-          { path: "hospital", element: <HospitalDashboard /> },
-          { path: "admin", element: <AdminDashboard /> },
+          {
+            path: "user",
+            element: <RoleBasedRoute allowedRoles={["user"]}><UserDashboard /></RoleBasedRoute>,
+          },
+          {
+            path: "driver",
+            element: <RoleBasedRoute allowedRoles={["driver"]}><DriverDashboard /></RoleBasedRoute>,
+          },
+          {
+            path: "hospital",
+            element: <RoleBasedRoute allowedRoles={["hospital"]}><HospitalDashboard /></RoleBasedRoute>,
+          },
+          {
+            path: "admin",
+            element: <RoleBasedRoute allowedRoles={["admin"]}><AdminDashboard /></RoleBasedRoute>,
+          },
         ],
       },
 
@@ -124,6 +136,7 @@ const router = createBrowserRouter([
     ],
   },
 ]);
+
 
 // ---------------------
 // App Component
