@@ -5,23 +5,30 @@ module.exports = (socket, io) => {
     console.log(`Ambulance joined zone-${zoneId}`);
   });
 
-  // Ambulance goes online → join unique room
+  // Ambulance goes online
   socket.on("ambulance-online", ({ ambulanceId }) => {
     socket.join(`ambulance-${ambulanceId}`);
     console.log(`Ambulance ${ambulanceId} is now online`);
   });
 
-  // Ambulance goes offline → leave unique room
+  // Ambulance goes offline
   socket.on("ambulance-offline", ({ ambulanceId }) => {
     socket.leave(`ambulance-${ambulanceId}`);
     console.log(`Ambulance ${ambulanceId} is now offline`);
   });
 
-  // Accept accident
+  // ✅ ACCEPT ACCIDENT (FIXED)
   socket.on("accept-accident", ({ accidentId }) => {
-    io.emit("accident-accepted", {
+    const driverId = socket.user?._id;
+
+    console.log(`Accident ${accidentId} accepted by ${driverId}`);
+
+    // 🔥 Remove accident for ALL OTHER drivers
+    socket.broadcast.emit("remove-accident", {
       accidentId,
-      driverId: socket.user?._id || "unknown",
     });
+
+    // (Optional but recommended)
+    // Update DB here: mark accident as ASSIGNED
   });
 };

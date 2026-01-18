@@ -23,6 +23,42 @@ export default function AmbulanceDashboard() {
   const [emergencies, setEmergencies] = useState([]);
   const socketRef = useRef(null);
 
+  const handleAccept = (emergency) => {
+    if (!socketRef.current) return;
+
+    // ✅ 1. OPEN NAVIGATION FIRST (must be first line)
+    const { latitude, longitude } = emergency.location;
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+    window.open(mapsUrl, "_blank");
+
+    // ✅ 2. THEN notify server
+    socketRef.current.emit("accept-accident", {
+      accidentId: emergency._id,
+    });
+  };
+
+  useEffect(() => {
+    if (!socketRef.current) return;
+
+    const onRemoveAccident = ({ accidentId }) => {
+      setEmergencies((prev) => prev.filter((e) => e._id !== accidentId));
+      setNotifications((prev) => (prev > 0 ? prev - 1 : 0));
+    };
+
+    socketRef.current.on("remove-accident", onRemoveAccident);
+
+    return () => {
+      socketRef.current.off("remove-accident", onRemoveAccident);
+    };
+  }, []);
+
+  // Reject an emergency
+  const handleReject = (emergencyId) => {
+    // Simply remove it locally; other drivers can still see it
+    setEmergencies((prev) => prev.filter((e) => e._id !== emergencyId));
+    setNotifications((prev) => (prev > 0 ? prev - 1 : 0));
+  };
+
   useEffect(() => {
     const socket = getSocket(); // get the socket instance initialized after login
     if (!socket) return; // socket not connected yet
@@ -42,7 +78,6 @@ export default function AmbulanceDashboard() {
       socketRef.current?.off("new-emergency");
     };
   }, [ambulance.status]);
-
 
   // Toggle ambulance status
   const handleStatusToggle = async () => {
@@ -124,9 +159,9 @@ export default function AmbulanceDashboard() {
             {emergencies.length === 0 ? (
               <p className="text-gray-600">Waiting for emergencies...</p>
             ) : (
-              emergencies.map((emergency, idx) => (
+              emergencies.map((emergency) => (
                 <div
-                  key={idx}
+                  key={emergency._id}
                   className="bg-white rounded-lg shadow-md p-4 border-l-4 border-red-500 flex flex-col gap-3"
                 >
                   <div>
@@ -144,13 +179,13 @@ export default function AmbulanceDashboard() {
                   <div className="flex gap-2">
                     <button
                       className="flex-1 py-1 px-2 bg-green-500 text-white rounded hover:bg-green-600"
-                      onClick={() => alert("Accept clicked")}
+                      onClick={() => handleAccept(emergency)}
                     >
                       Accept
                     </button>
                     <button
                       className="flex-1 py-1 px-2 bg-red-500 text-white rounded hover:bg-red-600"
-                      onClick={() => alert("Reject clicked")}
+                      onClick={() => handleReject(emergency._id)}
                     >
                       Reject
                     </button>
