@@ -40,7 +40,7 @@ const Login = () => {
     if (!validateForm()) return;
 
     try {
-      // ✅ Only login; routing is handled by PublicRoute
+     
       await login({ email, password });
     } catch (error) {
       console.error('Login failed:', error.message);

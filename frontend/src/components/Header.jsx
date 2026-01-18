@@ -1,29 +1,84 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, FileText, PlusCircle, BarChart, User, Menu, X, Bell, LogOut, AlertCircle, LogIn } from 'lucide-react';
-
-import { useAuthStore } from '../store/useAuthStore'; 
+import { Home, FileText, PlusCircle, BarChart, User, Menu, X, Bell, LogOut, AlertCircle, LogIn, Users, Car, Building } from 'lucide-react';
+import { useAuthStore } from '../store/useAuthStore';
 
 const Header = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const { isAuthenticated, logout } = useAuthStore();
+  const { isAuthenticated, user, logout } = useAuthStore();
   const navigate = useNavigate();
 
-  const navigation = [
-    { name: 'Home', href: '/', icon: Home },
-    { name: 'Reports', href: '/dashboard/User', icon: FileText },
-  ];
+  // Role-based navigation items
+  const NAV_ITEMS_BY_ROLE = {
+    user: [
+      { name: 'Home', href: '/', icon: Home },
+      { name: 'My Reports', href: '/dashboard/user', icon: FileText },
+      { name: 'New Report', href: '/report/new', icon: PlusCircle },
+    ],
+    driver: [
+      { name: 'Dashboard', href: '/dashboard/driver', icon: Car },
+      { name: 'Assigned Cases', href: '/dashboard/driver/cases', icon: FileText },
+    ],
+    admin: [
+      { name: 'Dashboard', href: '/dashboard/admin', icon: Home },
+      { name: 'Users', href: '/dashboard/admin/users', icon: Users },
+      { name: 'Reports', href: '/dashboard/admin/reports', icon: FileText },
+      { name: 'Analytics', href: '/dashboard/admin/analytics', icon: BarChart },
+    ],
+  };
+
+  // Get navigation items based on user role
+  const getNavigationItems = () => {
+    if (!isAuthenticated || !user) return [];
+    
+    switch (user.role) {
+      case 'user':
+        return NAV_ITEMS_BY_ROLE.user;
+      case 'driver':
+        return NAV_ITEMS_BY_ROLE.driver;
+      case 'admin':
+        return NAV_ITEMS_BY_ROLE.admin;
+      case 'hospital':
+        // You can add hospital items if needed
+        return [
+          { name: 'Dashboard', href: '/dashboard/hospital', icon: Building },
+          { name: 'Patients', href: '/dashboard/hospital/patients', icon: Users },
+        ];
+      default:
+        return [];
+    }
+  };
+
+  const navigation = getNavigationItems();
+
+  // Get logo link based on user role
+  const getLogoLink = () => {
+    if (!isAuthenticated || !user) return '/';
+    
+    switch (user.role) {
+      case 'user':
+        return '/dashboard/user';
+      case 'driver':
+        return '/dashboard/driver';
+      case 'admin':
+        return '/dashboard/admin';
+      case 'hospital':
+        return '/dashboard/hospital';
+      default:
+        return '/';
+    }
+  };
 
   const handleLogout = async () => {
     try {
-      await logout(); // wait for store + API
+      await logout();
       setShowLogoutConfirm(false);
       setOpenDropdown(false);
       setIsMenuOpen(false);
-      navigate('/login'); // navigate after logout
+      navigate('/login');
     } catch (err) {
       console.error('Logout failed', err);
     }
@@ -43,7 +98,7 @@ const Header = () => {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
-            <Link to="/dashboard" className="flex items-center space-x-2">
+            <Link to={getLogoLink()} className="flex items-center space-x-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600">
                 <span className="text-lg font-bold text-white">A</span>
               </div>
@@ -52,35 +107,48 @@ const Header = () => {
               </span>
             </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-1">
-              {navigation.map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.href;
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={`flex items-center space-x-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-red-50 text-red-700'
-                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span>{item.name}</span>
-                  </Link>
-                );
-              })}
-            </nav>
+            {/* Desktop Navigation - Only show if authenticated */}
+            {isAuthenticated && navigation.length > 0 && (
+              <nav className="hidden md:flex items-center space-x-1">
+                {navigation.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className={`flex items-center space-x-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                        isActive
+                          ? 'bg-red-50 text-red-700'
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{item.name}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+            )}
 
             {/* Actions */}
             <div className="flex items-center space-x-4">
-              {/* Notification */}
-              <button className="relative p-2 text-gray-600 hover:text-gray-900 transition-colors rounded-lg hover:bg-gray-100">
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-600 ring-2 ring-white"></span>
-              </button>
+              {/* Notification - Only show if authenticated */}
+              {isAuthenticated && (
+                <button className="relative p-2 text-gray-600 hover:text-gray-900 transition-colors rounded-lg hover:bg-gray-100">
+                  <Bell className="h-5 w-5" />
+                  <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-600 ring-2 ring-white"></span>
+                </button>
+              )}
+
+              {/* User Role Badge - Only show if authenticated */}
+              {isAuthenticated && user && (
+                <div className="hidden md:flex items-center">
+                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 capitalize">
+                    {user.role}
+                  </span>
+                </div>
+              )}
 
               {/* Login/Logout (Desktop) */}
               <div className="hidden md:flex items-center space-x-3">
@@ -102,7 +170,16 @@ const Header = () => {
                     </button>
 
                     {openDropdown && (
-                      <div className="absolute right-0 mt-2 w-40 rounded-lg bg-white shadow-lg border border-gray-200 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="absolute right-0 mt-2 w-48 rounded-lg bg-white shadow-lg border border-gray-200 animate-in fade-in slide-in-from-top-2 duration-200">
+                        {/* User Info */}
+                        {user && (
+                          <div className="px-4 py-3 border-b border-gray-100">
+                            <p className="text-sm font-medium text-gray-900">{user.name || user.email}</p>
+                            <p className="text-xs text-gray-500 capitalize">{user.role}</p>
+                          </div>
+                        )}
+                        
+                        {/* Logout Button */}
                         <button
                           onClick={() => {
                             confirmLogout();
@@ -133,7 +210,16 @@ const Header = () => {
           {isMenuOpen && (
             <div className="border-t md:hidden animate-in slide-in-from-top duration-200">
               <div className="space-y-1 px-2 pb-3 pt-2">
-                {navigation.map((item) => {
+                {/* User Info in Mobile Menu */}
+                {isAuthenticated && user && (
+                  <div className="px-3 py-2 mb-2 bg-gray-50 rounded-lg">
+                    <p className="text-sm font-medium text-gray-900">{user.name || user.email}</p>
+                    <p className="text-xs text-gray-500 capitalize">Role: {user.role}</p>
+                  </div>
+                )}
+
+                {/* Navigation Links - Only show if authenticated */}
+                {isAuthenticated && navigation.length > 0 && navigation.map((item) => {
                   const Icon = item.icon;
                   const isActive = location.pathname === item.href;
                   return (
@@ -178,7 +264,7 @@ const Header = () => {
         </div>
       </header>
 
-      {/* Logout Confirmation Alert - Positioned below header */}
+      {/* Logout Confirmation Alert */}
       {showLogoutConfirm && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4 animate-in slide-in-from-top duration-300">
           <div className="bg-white rounded-lg shadow-2xl border border-gray-200">
