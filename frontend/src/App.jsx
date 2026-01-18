@@ -16,7 +16,7 @@ import HospitalDashboard from "./dashboard/HospitalDashboard";
 
 
 const MainLayout = () => {
-  return (
+  return ( 
     <>
       <Header />     
       <main>
