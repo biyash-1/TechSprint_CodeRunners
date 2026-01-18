@@ -5,61 +5,68 @@ import { loginUser, signupUser, logoutUser } from "../services/auth";
 export const useAuthStore = create(
   persist(
     (set) => ({
-      user: null,
-      isAuthenticated: false,
+      // ------------------
+      // STATE
+      // ------------------
+      user: null,               // { id, email, role, ... }
       token: null,
+      isAuthenticated: false,
       isLoading: false,
       error: null,
 
-      // Login action
+      // ------------------
+      // ACTIONS
+      // ------------------
       login: async (credentials) => {
         set({ isLoading: true, error: null });
+
         try {
           const result = await loginUser(credentials);
-        set({
-  user: result.data,   // ✅ FIX HERE
-  token: result.token || null,
-  isAuthenticated: true,
-  isLoading: false,
-});
-          console.log("Auth Store - Login successful:", result);
-          return result;
-        } catch (error) {
-          set({ 
-            isLoading: false, 
-            error: error.message 
-          });
-          throw error;
-        }
-      },
 
-      // Signup action
-      signup: async (userData) => {
-        set({ isLoading: true, error: null });
-        try {
-          const result = await signupUser(userData);
+          // ✅ NORMALIZED RESPONSE
           set({
-            user: result.user,
-            token: result.token || null,
+            user: result.data,       // must contain role
+            token: result.token,
             isAuthenticated: true,
             isLoading: false,
           });
+
           return result;
-        } catch (error) {
-          set({ 
-            isLoading: false, 
-            error: error.message 
+        } catch (err) {
+          set({
+            isLoading: false,
+            error: err.message,
           });
-          throw error;
+          throw err;
         }
       },
 
-      // Logout action
+      signup: async (userData) => {
+        set({ isLoading: true, error: null });
+
+        try {
+          const result = await signupUser(userData);
+
+          set({
+            user: result.data,
+            token: result.token,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+
+          return result;
+        } catch (err) {
+          set({
+            isLoading: false,
+            error: err.message,
+          });
+          throw err;
+        }
+      },
+
       logout: async () => {
         try {
           await logoutUser();
-        } catch (err) {
-          console.error("Logout API failed", err);
         } finally {
           set({
             user: null,

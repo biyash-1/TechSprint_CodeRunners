@@ -1,10 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 
 const Login = () => {
-  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -42,26 +40,8 @@ const Login = () => {
     if (!validateForm()) return;
 
     try {
-      const result = await login({ email, password });
-      
-      console.log('Login success');
-   
-      const role = result?.data?.role || 'user';
-      switch (role) {
-        case 'driver':
-          navigate('/dashboard/driver');
-          break;
-        case 'hospital':
-          navigate('/dashboard/hospital');
-          break;
-        case 'admin':
-          navigate('/dashboard/admin');
-          break;  
-        case 'user':
-        default:
-          navigate('/dashboard/user');
-          break;
-      }
+      // ✅ Only login; routing is handled by PublicRoute
+      await login({ email, password });
     } catch (error) {
       console.error('Login failed:', error.message);
       setErrors({ ...errors, password: error.message });
@@ -69,11 +49,13 @@ const Login = () => {
   };
 
   const handleForgotPassword = () => {
-    navigate('/forgot-password');
+    // You can keep navigation here if you have a forgot-password page
+    window.location.href = '/forgot-password';
   };
 
   const handleSignUp = () => {
-    navigate('/signup');
+    // Navigate to signup page
+    window.location.href = '/signup';
   };
 
   return (
