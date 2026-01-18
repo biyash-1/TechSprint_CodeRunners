@@ -17,7 +17,7 @@ export const useAuthStore = create(
         try {
           const result = await loginUser(credentials);
         set({
-  user: result.data,   // ✅ FIX HERE
+  user: result.data,  
   token: result.token || null,
   isAuthenticated: true,
   isLoading: false,
@@ -32,6 +32,21 @@ export const useAuthStore = create(
           throw error;
         }
       },
+       loginDriver: async (credentials) => {
+    set({ isLoading: true });
+    try {
+      const data = await loginDriver(credentials);
+      set({
+        user: data.data,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+      return data;
+    } catch (err) {
+      set({ isLoading: false });
+      throw err;
+    }
+  },
 
       // Signup action
       signup: async (userData) => {
